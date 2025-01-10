@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Graph Profile</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f7f9fc;
+            color: #333;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+        }
+        #graph-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 80vh;
+            margin: 20px;
+        }
+        footer {
+            text-align: center;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+        }
+        .tooltip {
+            position: absolute;
+            background-color: white;
+            border: 1px solid #ccc;
+            padding: 5px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            display: none;
+        }
+        .status-window {
+            position: absolute;
+            top: 20%;
+            left: 20%;
+            width: 300px;
+            background-color: #f9f9f9;
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: none;
+        }
+        .status-window h2 {
+            margin-top: 0;
+        }
+        .photo-node {
+            clip-path: circle(50% at 50% 50%);
+        }
+    </style>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>My Social Graph</h1>
+        <p>Discover the connections that shaped me.</p>
+    </header>
+
+    <div id="graph-container">
+        <svg id="graph" width="800" height="600"></svg>
+    </div>
+
+    <div class="status-window" id="status-window">
+        <h2>My Stats</h2>
+        <p><strong>Name:</strong> Asli Ezgi Çil</p>
+        <p><strong>Age:</strong> 18</p>
+        <p><strong>Characteristics:</strong></p>
+        <ul>
+            <li>Learning new languages</li>
+            <li>Info-dumping</li>
+            <li>Solving Problems</li>
+            <li>Eating too much chocolate</li>
+        </ul>
+    </div>
+
+    <footer>
+        <p>Created by Asli</p>
+    </footer>
+
+    <script>
+        const width = 800;
+        const height = 600;
+
+        const nodes = [
+            { id: "me", group: 1, photo: "benn.jpg" },
+            { id: "Pelin", group: 2, trait: "Collabration", photo: "pelin.jpg" },
+            { id: "Teacher Nuh", group: 3, trait: "Love for Learning", photo: "nuh.jpg" },
+            { id: "Teacher Mehmet", group: 3, trait: "Creativity", photo: "mehmet.jpg" },
+            { id: "Teacher Sedat", group: 3, trait: "Confidence", photo: "sedat.jpg" },
+            { id: "My Sister", group: 4, trait: "Empathy", photo: "duru.jpg" },
+            { id: "My Mother", group: 4, trait: "Resilience", photo: "annem.jpg" },
+            { id: "dila", group: 4, trait: "Patience", photo: "dila.jpg" },
+            { id: "tarik", group: 4, trait: "Humor", photo: "tarik.jpg" },
+            
+        ];
+
+        const links = [
+            { source: "me", target: "Pelin" },
+            { source: "me", target: "Teacher Mehmet" },
+            { source: "me", target: "Teacher Nuh" },
+            { source: "Pelin", target: "Teacher Nuh" },
+            { source: "me", target: "Teacher Sedat" },
+            { source: "Teacher Sedat", target: "Teacher Nuh" },
+            { source: "Teacher Mehmet", target: "Teacher Nuh" },
+            { source: "me", target: "My Sister" },
+            { source: "Teacher Nuh", target: "My Sister" },
+            { source: "Pelin", target: "My Sister" },
+            { source: "me", target: "My Mother" },
+            { source: "me", target: "dila" },
+            { source: "My Mother", target: "My Sister" },
+            { source: "me", target: "tarik" },
+        ];
+
+        const svg = d3.select("#graph");
+        const tooltip = d3.select("body").append("div").attr("class", "tooltip");
+        const statusWindow = d3.select("#status-window");
+
+        const simulation = d3.forceSimulation(nodes)
+            .force("link", d3.forceLink(links).id(d => d.id).distance(150))
+            .force("charge", d3.forceManyBody().strength(-400))
+            .force("center", d3.forceCenter(width / 2, height / 2));
+
+        const link = svg.append("g")
+            .attr("stroke", "#999")
+            .attr("stroke-opacity", 0.6)
+            .selectAll("line")
+            .data(links)
+            .enter().append("line")
+            .attr("stroke-width", 2);
+
+        const node = svg.append("g")
+            .selectAll("image")
+            .data(nodes)
+            .enter().append("image")
+            .attr("xlink:href", d => d.photo)
+            .attr("width", 80) // Increased size
+            .attr("height", 80) // Increased size
+            .attr("class", "photo-node")
+            .call(drag(simulation))
+            .on("mouseover", (event, d) => {
+                tooltip.style("display", "block")
+                    .style("left", `${event.pageX + 10}px`)
+                    .style("top", `${event.pageY + 10}px`)
+                    .html(`<strong>${d.id}</strong><br>${d.trait || ''}`);
+            })
+            .on("mouseout", () => tooltip.style("display", "none"))
+            .on("click", (event, d) => {
+                if (d.id === "me") {
+                    statusWindow.style("display", "block");
+                }
+            });
+
+        const text = svg.append("g")
+            .selectAll("text")
+            .data(nodes)
+            .enter().append("text")
+            .attr("x", 12)
+            .attr("y", 3)
+            
+
+        simulation.on("tick", () => {
+            link.attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+
+            node.attr("x", d => d.x - 40) // Adjusted for new size
+                .attr("y", d => d.y - 40); // Adjusted for new size
+
+            text.attr("x", d => d.x + 12)
+                .attr("y", d => d.y + 3);
+        });
+
+        function drag(simulation) {
+            function dragstarted(event, d) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+
+            function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            }
+
+            function dragended(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            }
+
+            return d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended);
+        }
+
+        // Close status window on click outside
+        document.body.addEventListener("click", (event) => {
+            if (!event.target.closest(".status-window") && !event.target.closest("#graph")) {
+                statusWindow.style("display", "none");
+            }
+        });
+    </script>
+</body>
+</html>
